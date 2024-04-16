@@ -26,31 +26,30 @@ print(paste("Tamaño total de los archivos (bytes):", tamaño_total))
 print(paste("Tiempo total de copia (ms):", tiempo_total))
 
 # Calcular el tiempo medio de copia por archivo
-tiempo_medio <- mean(datos$`Tiempo.de.copia..ms.`, na.rm = TRUE)
-print(paste("Tiempo medio de copia por archivo (ms):", tiempo_medio))
+tiempo_promedio <- mean(datos$`Tiempo.de.copia..ms.`, na.rm = TRUE)
+print(paste("Tiempo medio de copia por archivo (ms):", tiempo_promedio))
 
-# Crear una nueva columna 'Procesos' que agrupa los datos por la cantidad de procesos
+# Crear una nueva columna 'Procesos' que agrupa los datos por el PID
 datos$Proceso <- as.numeric(gsub("PID ", "", datos$Proceso))
-datos$Procesos <- factor(datos$Proceso %/% 1000)
+datos$Procesos <- factor(datos$Proceso)
 
 # Calcular las métricas de rendimiento
-summary_stats <- data.frame(
-  Procesos = levels(datos$Procesos),
+pid_stats <- data.frame(
+  PID = levels(datos$Procesos),
   TiempoTotal = by(datos$`Tiempo.de.copia..ms.`, datos$Procesos, sum),
   TiempoPromedio = by(datos$`Tiempo.de.copia..ms.`, datos$Procesos, mean),
   VelocidadPromedio = by(datos$`Tamaño..bytes.`, datos$Procesos, sum) / by(datos$`Tiempo.de.copia..ms.`, datos$Procesos, sum)
 )
 
 # Ordenar los resultados por el tiempo total
-summary_stats <- summary_stats[order(summary_stats$TiempoTotal), ]
+pid_stats <- pid_stats[order(pid_stats$TiempoTotal, decreasing = TRUE), ]
 
 # Imprimir los resultados
-print(summary_stats)
+print(pid_stats)
 
-# Identificar el proceso más utilizado
-proceso_frecuencia <- table(datos$Proceso)
-proceso_mas_usado <- names(which.max(proceso_frecuencia))
-print(paste("El proceso más utilizado es:", proceso_mas_usado))
+# Identificar el PID más utilizado
+pid_mas_usado <- names(which.max(table(datos$Proceso)))
+print(paste("El PID más utilizado es:", pid_mas_usado))
 
 # Calcular el tiempo promedio de copia
 tiempo_promedio <- mean(datos$`Tiempo.de.copia..ms.`)
@@ -59,18 +58,18 @@ print(paste("El tiempo promedio para copiar un archivo es:", tiempo_promedio, "m
 # Generar visualizaciones
 library(ggplot2)
 
-ggplot(summary_stats, aes(x = Procesos, y = TiempoTotal)) +
+ggplot(pid_stats, aes(x = PID, y = TiempoTotal)) +
   geom_bar(stat = "identity") +
-  labs(title = "Tiempo Total de Ejecución", x = "Cantidad de Procesos", y = "Tiempo Total (ms)") +
+  labs(title = "Tiempo Total de Ejecución por PID", x = "PID", y = "Tiempo Total (ms)") +
   theme_bw()
 
-ggplot(summary_stats, aes(x = Procesos, y = TiempoPromedio)) +
+ggplot(pid_stats, aes(x = PID, y = TiempoPromedio)) +
   geom_bar(stat = "identity") +
-  labs(title = "Tiempo Promedio de Copia", x = "Cantidad de Procesos", y = "Tiempo Promedio (ms)") +
+  labs(title = "Tiempo Promedio de Copia por PID", x = "PID", y = "Tiempo Promedio (ms)") +
   theme_bw()
 
-ggplot(summary_stats, aes(x = Procesos, y = VelocidadPromedio)) +
+ggplot(pid_stats, aes(x = PID, y = VelocidadPromedio)) +
   geom_bar(stat = "identity") +
-  labs(title = "Velocidad Promedio de Copia", x = "Cantidad de Procesos", y = "Velocidad Promedio (bytes/ms)") +
+  labs(title = "Velocidad Promedio de Copia por PID", x = "PID", y = "Velocidad Promedio (bytes/ms)") +
   theme_bw()
 
